@@ -11,7 +11,7 @@ def main():
 	area = prelim.ask_user()
 	df = get_files.getFiles(area)
 
-	out_path = '//bissrv1/shared$/Business Intelligence Files/Landscape Analyses' + '/' + area + '/Processed Data/'
+	out_path = '#outputPath' + '/' + area + '/Processed Data/'
 	
 	data_year = "fix this"
 	
