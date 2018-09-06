@@ -30,9 +30,6 @@ def readAll(path, file):
 	df['Year range'] = data_year
 	df['Analysis year'] = curr_year
 	
-	#add "outliers" column, assign any found outliers
-	df = outliers(df)
-	
 	return df
 
 def readGov(path, file):
@@ -72,11 +69,10 @@ def getFiles(area):
 		for f, g in zip(aFiles, gFiles):
 			df_data = readAll(apath, f)
 			df_g = readGov(gpath, g)
-			dfa = df_data.merge(df_g, left_on = "Institution", right_on = "Institution", how = "outer")
-			c = list(dfa)
-			dfa.drop(c[8:], axis = 1, inplace = True)
+			dfa = pd.concat([df_data, df_g])
+			dfa = dfa.dropna()
+			dfa = dfa.reset_index(drop=True)
+			dfa = outliers(dfa)
 			df = df.append(dfa)
-		return df
-		
 	else:
 		print("Please check for missing files")
