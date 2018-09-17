@@ -1,6 +1,7 @@
 import os
 import sys
 import pandas as pd
+import numpy as np
 from PyAstronomy import pyasl
 import datetime
 
@@ -17,13 +18,34 @@ def outliers(df):
 		pass
 	return df
 
+	
+	
+def skip_to(fle, line,**kwargs):
+    if os.stat(fle).st_size == 0:
+        raise ValueError("File is empty")
+    with open(fle) as f:
+        pos = 0
+        cur_line = f.readline()
+        while not cur_line.startswith(line):
+            pos = f.tell()
+            cur_line = f.readline()
+        f.seek(pos)
+        return pd.read_csv(f, error_bad_lines = False, encoding = 'ISO-8859-1', nrows = 100, **kwargs)
+		
+		
 
 def readAll(path, file):
 
-	df = pd.read_excel(path + file, skiprows = 16, usecols = [0, 1, 2, 3]).dropna()
-	df_x = pd.read_excel(path + file)
-	data_name = df_x.iloc[0].to_string(name = True).split(',')[1]
-	data_year = df_x.iloc[1].to_string(name = True).split(',')[1].replace('to', '-')
+	df = skip_to(path + file, 'Institution')
+	if 'Unnamed' in df.columns[-1]:
+		df.drop(df.columns[-1,], axis=1, inplace=True)
+	df.dropna()
+	data_name = skip_to(path + file, 'Entity').iloc[:0].to_string().split(',')[1]
+	if ']' in data_name: 
+		data_name = data_name.split(']')[0]
+	data_year = skip_to(path + file, 'Year range').iloc[:0].to_string().split(',')[1].replace('to', '-')
+	if ']' in data_year: 
+		data_year = data_year.split(']')[0]
 	curr_year = datetime.date.today().strftime("%Y")
 
 	df['Subject'] = data_name
@@ -32,15 +54,21 @@ def readAll(path, file):
 	
 	return df
 
+	
 def readGov(path, file):
 
 	doe_labs = ['Oak Ridge National Laboratory', 'Argonne National Laboratory', 'Lawrence Berkeley National Laboratory', 'Pacific Northwest National Laboratory', 'Brookhaven National Laboratory', 'Los Alamos National Laboratory', 'National Renewable Energy Laboratory', 'Lawrence Livermore National Laboratory', 'Sandia National Laboratories NM', 'Ames Laboratory', 'Sandia National Laboratories CA', 'Idaho National Laboratory', 'Fermi National Accelerator Laboratory', 'Princeton Plasma Physics Laboratory', 'SLAC National Accelerator Laboratory', 'Thomas Jefferson National Accelerator Facility', 'National Energy Technology Laboratory', 'Savannah River National Laboratory']
 	
-	df = pd.read_excel(path + file, skiprows = 19, usecols = [0, 1, 2, 3]).dropna()
-	df_x = pd.read_excel(path + file)
-	data_name = df_x.iloc[0].to_string(name = True).split(',')[1]
-	data_year = df_x.iloc[1].to_string(name = True).split(',')[1].replace('to', '-')
-	data_sector = df_x.iloc[10].to_string(name = True).split(',')[1]
+	df = skip_to(path + file, 'Institution')
+	if 'Unnamed' in df.columns[-1]:
+		df.drop(df.columns[-1,], axis=1, inplace=True)
+	df.dropna()
+	data_name = skip_to(path + file, 'Entity').iloc[:0].to_string().split(',')[1]
+	if ']' in data_name: 
+		data_name = data_name.split(']')[0]
+	data_year = skip_to(path + file, 'Year range').iloc[:0].to_string().split(',')[1].replace('to', '-')
+	if ']' in data_year: 
+		data_year = data_year.split(']')[0]
 	curr_year = datetime.date.today().strftime("%Y")
 	
 	df['Subject'] = data_name
@@ -55,13 +83,13 @@ def getFiles(area):
 	
 	df = pd.DataFrame()
 	
-	apath = '#inputPath' + '/' + area + '/Raw Data/All/'
-	gpath = '#inputPath' + '/' + area + '/Raw Data/Gov/'
+	apath = '//bissrv1/shared$/Business Intelligence Files/Landscape Analyses' + '/' + area + '/Raw Data/All/'
+	gpath = '//bissrv1/shared$/Business Intelligence Files/Landscape Analyses' + '/' + area + '/Raw Data/Gov/'
 
 	afiles = os.listdir(apath)
 	gfiles = os.listdir(gpath)
-	aFiles = [f for f in afiles if f[-3:] == 'xls']
-	gFiles = [f for f in gfiles if f[-3:] == 'xls']
+	aFiles = [f for f in afiles if f[-3:] == 'csv']
+	gFiles = [f for f in gfiles if f[-3:] == 'csv']
 
 	if len(afiles) == len(gfiles):
 		print("All files accounted for")
@@ -70,9 +98,11 @@ def getFiles(area):
 			df_data = readAll(apath, f)
 			df_g = readGov(gpath, g)
 			dfa = pd.concat([df_data, df_g])
-			dfa = dfa.dropna()
 			dfa = dfa.reset_index(drop=True)
 			dfa = outliers(dfa)
+			dfa = dfa.assign(Median = np.median(dfa[['Scholarly Output']].as_matrix()))
 			df = df.append(dfa)
 	else:
 		print("Please check for missing files")
+		
+	return df
