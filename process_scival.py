@@ -9,7 +9,9 @@ def main():
 
 	area = prelim.ask_user()
 	df = get_files.getFiles(area)
-
+	
+	df['W3TZ'] = df.apply(lambda row: row['Scholarly Output'] * row['Field-Weighted Citation Impact'], axis = 1)
+	
 	out_path = '#outputPath' + '/' + area + '/Processed Data/'
 	
 	data_year = np.unique(df[['Year range']].dropna().as_matrix())[0]
