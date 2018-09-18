@@ -83,8 +83,8 @@ def getFiles(area):
 	
 	df = pd.DataFrame()
 	
-	apath = '//bissrv1/shared$/Business Intelligence Files/Landscape Analyses' + '/' + area + '/Raw Data/All/'
-	gpath = '//bissrv1/shared$/Business Intelligence Files/Landscape Analyses' + '/' + area + '/Raw Data/Gov/'
+	apath = '#apath' + '/' + area + '/Raw Data/All/'
+	gpath = '#bpath' + '/' + area + '/Raw Data/Gov/'
 
 	afiles = os.listdir(apath)
 	gfiles = os.listdir(gpath)
